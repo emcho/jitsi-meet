@@ -26,6 +26,12 @@ var buttonHandlers = {
         }
         return APP.UI.toggleAudio();
     },
+    "toolbar_button_unmute": function () {
+        if (APP.RTC.localAudio.isMuted()) {
+            AnalyticsAdapter.sendEvent('toolbar.audio.unmuted');
+            return APP.UI.toggleAudio();
+        }
+    },
     "toolbar_button_camera": function () {
         if (APP.RTC.localVideo.isMuted()) {
             AnalyticsAdapter.sendEvent('toolbar.video.enabled');
@@ -717,7 +723,18 @@ var Toolbar = (function (my) {
         }
     };
 
-    return my;
+    /**
+     * Displays an alert notifying the user they are muted and offering
+     * an unmute option.
+     * @param show <tt>true</tt> to show or <tt>false</tt> to hide
+     */
+    my.showMuteAlert = function () {
+        console.log("The BITCHES are still here.");
+        $('.mute-alert-popup').show();
+    };
+
+
+        return my;
 }(Toolbar || {}));
 
 module.exports = Toolbar;

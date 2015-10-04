@@ -23,6 +23,7 @@ var Authentication  = require("./authentication/Authentication");
 var UIUtil = require("./util/UIUtil");
 var NicknameHandler = require("./util/NicknameHandler");
 var JitsiPopover = require("./util/JitsiPopover");
+var MuteAlerter = require("./mute_alerter/MuteAlerter");
 var CQEvents = require("../../service/connectionquality/CQEvents");
 var DesktopSharingEventTypes
     = require("../../service/desktopsharing/DesktopSharingEventTypes");
@@ -187,6 +188,9 @@ function registerListeners() {
         if(jid === APP.statistics.LOCAL_JID) {
             resourceJid = AudioLevels.LOCAL_LEVEL;
             if(APP.RTC.localAudio.isMuted()) {
+                if(audioLevel == 1){
+                    console.log("on parle!!!!!!!");
+                }
                 audioLevel = 0;
             }
         } else {
@@ -339,6 +343,13 @@ function registerListeners() {
         APP.xmpp.allocateConferenceFocus(roomName, UI.checkForNicknameAndJoin);
     });
 
+    MuteAlerter.registerListeners();
+
+    MuteAlerter.addMuteAlertListener(function(){
+        console.log("We Still love you BITCHEEEEES");
+        Toolbar.showMuteAlert();
+    });
+
     //NicknameHandler emits this event
     UI.addListener(UIEvents.NICKNAME_CHANGED, function (nickname) {
         APP.xmpp.addToPresence("displayName", nickname);
@@ -372,6 +383,7 @@ function setVideoMute(mute, options) {
     APP.RTC.setVideoMute(mute,
         UI.setVideoMuteButtonsState,
         options);
+    eventEmitter.emit(UIEvents.LOCAL_VIDEO_MUTED, mute);
 }
 
 function onResize() {
@@ -831,14 +843,17 @@ UI.toggleAudio = function() {
  */
 UI.setAudioMuted = function (mute, earlyMute) {
     var audioMute = null;
-    if (earlyMute)
+
+    if (earlyMute) {
         audioMute = function (mute, cb) {
             return APP.xmpp.sendAudioInfoPresence(mute, cb);
         };
-    else
+    }
+    else {
         audioMute = function (mute, cb) {
             return APP.xmpp.setAudioMute(mute, cb);
         };
+    }
     if (!audioMute(mute, function () {
             VideoLayout.showLocalAudioIndicator(mute);
 
@@ -846,8 +861,9 @@ UI.setAudioMuted = function (mute, earlyMute) {
         })) {
         // We still click the button.
         UIUtil.buttonClick("#toolbar_button_mute", "icon-microphone icon-mic-disabled");
-        return;
     }
+
+    eventEmitter.emit(UIEvents.LOCAL_AUDIO_MUTED, mute);
 };
 
 UI.addListener = function (type, listener) {
